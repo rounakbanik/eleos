@@ -3,6 +3,7 @@ var restify = require('restify');
 var querystring = require('querystring');
 var http = require('http');
 var request = require('request');
+var twilio = require('twilio');
 
 //=========================================================
 // Bot Setup
@@ -29,6 +30,12 @@ var QnAheaders = {
 };
 var QnAUrl = 'https://westus.api.cognitive.microsoft.com/qnamaker/v1.0/knowledgebases/923e329c-f34b-49fd-b19d-39e8df3d20bd/generateAnswer?subscription-key=277bbed4e3604c73975b4d80ac5d92b3';
 
+var accountSid = 'AC4605f10acc3f48f8af40d07588550aef'; 
+var authToken = '7ba668870602838b7df1fd54dedc314f'; 
+
+var client = new twilio.RestClient(accountSid, authToken);
+
+
 
 //=========================================================
 // Bots Dialogs
@@ -38,21 +45,29 @@ var recognizer = new builder.LuisRecognizer(luisModelUrl);
 var intents = new builder.IntentDialog({ recognizers: [recognizer] });
 bot.dialog('/', intents);
 
+intents.matches('DangerIntent',
+    function(session, args, next) {
+        console.log('Session message: ' + session.message.text);
+        session.send('You seem to be extremely depressed and are probably at risk.');
+        session.send('Before you do anything drastic, please do remember that there are always people in your life who care about you and will be deeply affected should you do something extreme.');
+        session.send("It is highly advised that you speak to someone. I would recommend AASRA. I'm sure they will be able to help you out in this difficult time.");
+        session.send("AASRA's number is 022 2754 6669.");
+        /*client.messages.create({
+            body: 'Your friend is in danger. You should talk to him.',
+            to: session.userData.number,  // Text this number
+            from: '+19402023122 ' // From a valid Twilio number
+        }, function(err, message) {
+            if(err) {
+                console.error(err.message);
+            }
+        });*/
+
+    }
+);
+
+
 intents.matches('FAQIntent', 
     function (session, args, next) {
-        // Process optional entities received from LUIS
-        /*var match;
-        var entity = builder.EntityRecognizer.findEntity(args.entities, 'TaskTitle');
-        if (entity) {
-            match = builder.EntityRecognizer.findBestMatch(tasks, entity.entity);
-        }
-        
-        // Prompt for task name
-        if (!match) {
-            builder.Prompts.choice(session, "Which task would you like to delete?", tasks);
-        } else {
-            next({ response: match });
-        }*/
         console.log('Session message: ' + session.message.text)
         var QnAOptions = {
             url: QnAUrl,
@@ -64,40 +79,39 @@ intents.matches('FAQIntent',
             if (!error) {
                 // Print out the response body
                 var json = JSON.parse(body);
-                session.send(json.answer);
-                //console.log(typeof(json));
+                if(json.answer == "No good match found in the KB") {
+                    session.send("I'm afraid I do not have an answer to that question right now.");
+                }
+                else {
+                    session.send(json.answer);
+                }
         
             }
             else {
-                console.log(error);
+                session.send("Oops! I have encountered an error in my system. Please try again. I'm sorry for the inconvenience.");
             }
         })
-        //session.send(session.message);
     }
-    /*function (session, results) {
-        if (results.response) {
-            delete tasks[results.response.entity];
-            session.send("Deleted the '%s' task.", results.response.entity);
-        } else {
-            session.send('Ok... no problem.');
-        }
-        session.send('Okay bro');
-    }*/
 );
 
-/*intents.matches(/^change name/i, [
+
+
+intents.matches(/^add number/i, [
     function (session) {
-        session.beginDialog('/profile');
+        builder.Prompts.text(session, 'Hey! Can I know the number of the person closes to you? Someone I can contact in the time of need?');
     },
     function (session, results) {
-        session.send('Ok... Changed your name to %s', session.userData.name);
+        session.userData.number = results.response;
+        session.send('Ok... Added number %s', session.userData.number);
+        session.endDialog();
     }
 ]);
 
-intents.onDefault([
+/*intents.onBegin([
     function (session, args, next) {
         if (!session.userData.name) {
-            session.beginDialog('/profile');
+            session.send('How do you do?');
+            //session.beginDialog('/profile');
         } else {
             next();
         }
@@ -113,6 +127,11 @@ bot.dialog('/profile', [
     },
     function (session, results) {
         session.userData.name = results.response;
+        builder.Prompts.text(session, 'Hello %s! Can you provide a number of the person closest to you? Someone I can contact in the time of need?')
+        //session.endDialog();
+    },
+    function(session, results) {
+        session.userData.number = results.response;
         session.endDialog();
     }
 ]);*/
