@@ -65,6 +65,21 @@ intents.matches('DangerIntent',
     }
 );
 
+/*intents.matches('ListenerIntent', [
+    function(session, args, next) {
+        builder.Prompts.choice(session, 'I understand. Would you like to talk more about this? I could act like an Active Listener if you want me to. I will listen and help you understand your thoughts. No suggestions. No judgments. :)', 'Yes|No');
+    },
+    function(session, results) {
+        console.log(results.response);
+        if(results.response.entity == 'Yes') {
+            session.send('Awesome! Let\'s Go!');
+        }
+        else {
+            session.send("Alright! Let me know if you need me. I'm always here for you.");
+        }
+    }
+]);*/
+
 
 intents.matches('FAQIntent', 
     function (session, args, next) {
@@ -96,9 +111,9 @@ intents.matches('FAQIntent',
 
 
 
-intents.matches(/^add number/i, [
+intents.matches('ChangeNumberIntent', [
     function (session) {
-        builder.Prompts.text(session, 'Hey! Can I know the number of the person closes to you? Someone I can contact in the time of need?');
+        builder.Prompts.text(session, 'Sure, let us do that! Can I know the number of the person closest to you? Someone I can contact in the time of need?');
     },
     function (session, results) {
         session.userData.number = results.response;
